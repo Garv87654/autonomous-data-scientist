@@ -1,0 +1,25 @@
+# Environments
+.env
+venv/
+env/
+ENV/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Application Data & Models
+temp_data/
+backend/data/
+models/
+*.csv
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Node/React leftovers (if they still exist)
+node_modules/
+dist/

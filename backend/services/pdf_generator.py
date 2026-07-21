@@ -80,25 +80,13 @@ def convert_md_to_pdf(md_content: str, output_pdf_path: str) -> bool:
     </html>
     """
     
-    temp_html_path = os.path.abspath(os.path.join(os.path.dirname(output_pdf_path), "temp_report.html"))
     output_pdf_path = os.path.abspath(output_pdf_path)
-    with open(temp_html_path, "w", encoding="utf-8") as f:
-        f.write(html_document)
-        
-    # Compile to PDF using Chrome
-    chrome_path = "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
-    if os.path.exists(chrome_path):
-        file_url = "file:///" + temp_html_path.replace("\\", "/")
-        subprocess.run([
-            chrome_path,
-            "--headless",
-            "--disable-gpu",
-            f"--print-to-pdf={output_pdf_path}",
-            file_url
-        ], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        
-        # Cleanup
-        if os.path.exists(temp_html_path):
-            os.remove(temp_html_path)
-        return os.path.exists(output_pdf_path)
-    return False
+    
+    try:
+        from xhtml2pdf import pisa
+        with open(output_pdf_path, "w+b") as result_file:
+            pisa_status = pisa.CreatePDF(html_document, dest=result_file)
+        return not pisa_status.err
+    except Exception as e:
+        print(f"Error generating PDF: {e}")
+        return False

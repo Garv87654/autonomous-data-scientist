@@ -1,0 +1,1 @@
+{"id": "8110e2e0-ce30-4a31-a33d-bfdb8c68fc4b", "dataset_id": "temp_dataset", "target_column": "CustomerID", "problem_type": "regression", "best_model_name": "Linear Regression", "metrics": {"rmse": 0.8709624133280072, "r2": 0.0455742848417916}, "features": ["Age", "Annual_Income_k", "Spending_Score", "Years_as_Customer", "Store_Location", "Purchased_Premium"]}

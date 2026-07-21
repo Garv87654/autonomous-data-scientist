@@ -36,6 +36,10 @@ if "clean_logs" not in st.session_state:
     st.session_state.clean_logs = None
 if "train_results" not in st.session_state:
     st.session_state.train_results = None
+if "report" not in st.session_state:
+    st.session_state.report = None
+if "pdf_data" not in st.session_state:
+    st.session_state.pdf_data = None
 TEMP_DIR = "backend/data"
 os.makedirs(TEMP_DIR, exist_ok=True)
 
@@ -164,22 +168,28 @@ with tab6:
         if st.button("Generate AI Report"):
             with st.spinner("Writing report with Groq LLM..."):
                 report = generate_report(st.session_state.experiment_id)
-                st.markdown(report)
+                st.session_state.report = report
                 
                 pdf_path = os.path.join(TEMP_DIR, "ai_report.pdf")
                 success = convert_md_to_pdf(report, pdf_path)
                 
                 if success:
                     with open(pdf_path, "rb") as f:
-                        pdf_data = f.read()
-                    
-                    st.download_button(
-                        label="Download PDF Report",
-                        data=pdf_data,
-                        file_name="ai_data_scientist_report.pdf",
-                        mime="application/pdf"
-                    )
+                        st.session_state.pdf_data = f.read()
                 else:
-                    st.error("Failed to generate PDF. You can still read the report above.")
+                    st.session_state.pdf_data = False
+                    
+        if st.session_state.report is not None:
+            st.markdown(st.session_state.report)
+            
+            if st.session_state.pdf_data is not False and st.session_state.pdf_data is not None:
+                st.download_button(
+                    label="Download PDF Report",
+                    data=st.session_state.pdf_data,
+                    file_name="ai_data_scientist_report.pdf",
+                    mime="application/pdf"
+                )
+            elif st.session_state.pdf_data is False:
+                st.error("Failed to generate PDF on the cloud server. You can still read the report above.")
     else:
         st.info("Please train a model first.")

@@ -7,3 +7,4 @@ xgboost
 shap
 groq
 python-dotenv
+xhtml2pdf

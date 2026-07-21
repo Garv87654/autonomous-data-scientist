@@ -14,6 +14,7 @@ from backend.services.eda import generate_eda
 from backend.services.model_trainer import train_models
 from backend.services.explainer import generate_explanations
 from backend.services.llm_agent import generate_report
+from backend.services.pdf_generator import convert_md_to_pdf
 
 st.set_page_config(page_title="AI OS for Data", page_icon="🤖", layout="wide")
 
@@ -31,7 +32,10 @@ if "experiment_id" not in st.session_state:
     st.session_state.experiment_id = None
 if "dataset_id" not in st.session_state:
     st.session_state.dataset_id = "temp_dataset"
-    
+if "clean_logs" not in st.session_state:
+    st.session_state.clean_logs = None
+if "train_results" not in st.session_state:
+    st.session_state.train_results = None
 TEMP_DIR = "backend/data"
 os.makedirs(TEMP_DIR, exist_ok=True)
 
@@ -82,10 +86,12 @@ with tab2:
                 clean_path = os.path.join(TEMP_DIR, f"{st.session_state.dataset_id}_cleaned.csv")
                 df_clean.to_csv(clean_path, index=False)
                 st.session_state.df_clean = df_clean
+                st.session_state.clean_logs = logs
                 
-                st.success("Cleaning complete!")
-                for log in logs:
-                    st.info(log)
+        if st.session_state.clean_logs is not None:
+            st.success("Cleaning complete!")
+            for log in st.session_state.clean_logs:
+                st.info(log)
     else:
         st.info("Please upload a dataset first.")
 
@@ -118,16 +124,19 @@ with tab4:
                 clean_path = os.path.join(TEMP_DIR, f"{st.session_state.dataset_id}_cleaned.csv")
                 results = train_models(clean_path, target, st.session_state.dataset_id)
                 st.session_state.experiment_id = results["experiment_id"]
+                st.session_state.train_results = results
                 
-                st.success(f"Training Complete! Detected Task: {results['problem_type']}")
-                
-                for res in results["all_results"]:
-                    is_best = res["model"] == results["best_model"]
-                    if is_best:
-                        st.markdown(f"### 🏆 {res['model']} (Best)")
-                    else:
-                        st.markdown(f"#### {res['model']}")
-                    st.json(res["metrics"])
+        if st.session_state.train_results is not None:
+            results = st.session_state.train_results
+            st.success(f"Training Complete! Detected Task: {results['problem_type']}")
+            
+            for res in results["all_results"]:
+                is_best = res["model"] == results["best_model"]
+                if is_best:
+                    st.markdown(f"### 🏆 {res['model']} (Best)")
+                else:
+                    st.markdown(f"#### {res['model']}")
+                st.json(res["metrics"])
     else:
         st.info("Please clean the dataset first.")
 
@@ -157,11 +166,20 @@ with tab6:
                 report = generate_report(st.session_state.experiment_id)
                 st.markdown(report)
                 
-                st.download_button(
-                    label="Download Markdown",
-                    data=report,
-                    file_name="ai_data_scientist_report.md",
-                    mime="text/markdown"
-                )
+                pdf_path = os.path.join(TEMP_DIR, "ai_report.pdf")
+                success = convert_md_to_pdf(report, pdf_path)
+                
+                if success:
+                    with open(pdf_path, "rb") as f:
+                        pdf_data = f.read()
+                    
+                    st.download_button(
+                        label="Download PDF Report",
+                        data=pdf_data,
+                        file_name="ai_data_scientist_report.pdf",
+                        mime="application/pdf"
+                    )
+                else:
+                    st.error("Failed to generate PDF. You can still read the report above.")
     else:
         st.info("Please train a model first.")
